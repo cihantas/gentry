@@ -1,0 +1,33 @@
+body {
+    margin: 2rem auto;
+    max-width: 752px;    
+    padding: 0 2rem;
+
+    --sec-color: #808080;
+}
+
+.post {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}
+
+.post header {
+    margin-bottom: .5rem;
+    display: flex;
+}
+
+.post > .post:first-of-type {
+    margin-top: 1rem;
+}
+
+.post header time {
+    margin-bottom: .5rem;
+    margin-left: auto;
+    color: var(--sec-color);
+}
+
+.post > .post {
+    margin-left: 1rem; 
+    padding-left: 1rem; 
+    border-left: 1px dashed #aaa;
+}
