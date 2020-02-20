@@ -100,7 +100,11 @@ sql
 
 ;; MODELS & REPOSITORIES
 
-(struct post (author-id title body created-at))
+(struct post (author-id title message posted-at))
+
+(define (make-post #:author_id )
+
+
 (struct topic (id title))
 
 (define (all-posts-by-topic-title title)
@@ -127,6 +131,7 @@ sql
 
 ;; REQUEST HANDLERS
 
+;; Wraps a response/xexpr into the main layout -> response/xexpr.
 (define (layout/main . content)
   (response/xexpr
     `(html
