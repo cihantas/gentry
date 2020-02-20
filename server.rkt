@@ -33,7 +33,7 @@
 
 ;; INIT
 
-(define db-con (sqlite3-connect #:database 'memory))
+(define db-con (sqlite3-connect #:database "db.sqlite"))
 
 ;; Enable SQLite foreign key support.
 (query-exec db-con "PRAGMA foreign_keys = ON")
@@ -45,16 +45,22 @@
 (query-exec db-con #<<sql
     CREATE TABLE IF NOT EXISTS topics (
         id    INTEGER PRIMARY KEY,
-        title TEXT    NOT NULL
+        title TEXT    UNIQUE NOT NULL
     );
 sql
 )
 
 (query-exec db-con #<<sql
     CREATE TABLE IF NOT EXISTS posts (
-        id      INTEGER PRIMARY KEY,
-        title   TEXT    NOT NULL,
-        message TEXT    NOT NULL 
+        id        INTEGER PRIMARY KEY,
+        topic_id  INTEGER NOT NULL,
+        title     TEXT    NOT NULL,
+        message   TEXT    NOT NULL,
+        posted_at TEXT    NOT NULL,
+
+        FOREIGN KEY (topic_id) REFERENCES topics(id)
+            ON UPDATE CASCADE
+            ON DELETE CASCADE
     );
 sql
 )
@@ -82,9 +88,11 @@ sql
 )
 
 (query-exec db-con #<<sql
-    INSERT OR IGNORE INTO posts (title)
-    VALUES ('cs'),
-           ('gentry');
+    INSERT OR IGNORE INTO posts (title, message, topic_id, posted_at)
+    VALUES ('First Post', 'Lorem...', 1, CURRENT_TIMESTAMP),
+           ('Second Post', 'Ipsum!', 1, CURRENT_TIMESTAMP),
+           ('Third Post', 'Dolor!', 1, CURRENT_TIMESTAMP),
+           ('Fourth  Post', 'Sit!', 2, CURRENT_TIMESTAMP);
 sql
 )
 
@@ -96,12 +104,12 @@ sql
 (struct topic (id title))
 
 (define (all-posts-by-topic-title title)
-  (query-exec db-con
+  (query-rows db-con
     #<<sql
     SELECT posts.* FROM posts
     JOIN topics ON topics.id = posts.topic_id
     WHERE topics.title = $1
-    ORDER BY posts.created_at DESC
+    ORDER BY posts.posted_at DESC
 sql
     title))
 
@@ -119,12 +127,21 @@ sql
 
 ;; REQUEST HANDLERS
 
-(define (list-topic-posts req topic)
+(define (layout/main . content)
   (response/xexpr
-    `(strong "list-topic-posts on" ,topic)))
+    `(html
+       (head
+         (link ([href "/gentry.css"] [rel "stylesheet"])))
+       (body ,@content))))
 
+;; Lists all posts of the topic.
+(define (list-topic-posts req topic)
+  (layout/main
+    `(strong "list-topic-posts on " ,topic)))
+
+;; Shows a 404 Not Found error message.
 (define (not-found req)
-  (response/xexpr
+  (layout/main
     `(strong "Not found.")))
 
 
@@ -133,4 +150,5 @@ sql
 (serve/servlet router
                #:port 1234
                #:command-line? #t
+               #:extra-files-paths (list ".")
                #:servlet-regexp #rx"")
